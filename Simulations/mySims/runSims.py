@@ -95,6 +95,8 @@ def addReserve(model, coord, optimal_force, max_control):
 runTorqueTracking = True
 runMuscleTracking = False 
 runMusclePrediction = False 
+inputkin='subject01_Run_20002_cycle3_Kinematics_qInverse.sto'
+LoadSetup='RunMadLoads_HamnerGRF.xml'
 
 #Here we provide an option to compare and visualise the results of the function
 #Defaults to true for loading results and comparing visually
@@ -128,8 +130,8 @@ if runTorqueTracking:
     #Set simulation parameters
     
     #Timing and mesh data
-    initialTime = osim.Storage('refQ_2D.sto').getFirstTime()
-    finalTime = osim.Storage('refQ_2D.sto').getLastTime()
+    initialTime = osim.Storage(inputkin).getFirstTime()
+    finalTime = osim.Storage(inputkin).getLastTime()
     duration = finalTime - initialTime
     meshNo = 50
     meshInterval = duration / meshNo
@@ -198,7 +200,7 @@ if runTorqueTracking:
     track.setModel(torqueModelProcessor)
     
     #Set kinematic data and parameters
-    tableProcessor = osim.TableProcessor('refQ_2D.sto')
+    tableProcessor = osim.TableProcessor(inputkin)
     # tableProcessor.append(osim.TabOpLowPassFilter(12)) ### data already filtered via RRA
     tableProcessor.append(osim.TabOpUseAbsoluteStateNames())
     track.setStatesReference(tableProcessor)
@@ -246,7 +248,7 @@ if runTorqueTracking:
         effort.setWeightForControl('/forceset/lumbarAct', 0.001)
     
     #Set an average speed goal based on sprinting data
-    df_kinematics = readSTO('refQ_2D.sto')
+    df_kinematics = readSTO(inputkin)
     startPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[0]
     endPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[-1]
     sprintSpeed = (endPos - startPos) / (finalTime - initialTime)
@@ -257,30 +259,20 @@ if runTorqueTracking:
     
     #Set symmetry constraint
     #Create symmetry goal
+    #edited to allow for full gait cycles
     symmetryGoal = osim.MocoPeriodicityGoal('symmetryGoal')
     #Set symmetric coordinate values (except for pelvis_tx) and speeds
     for cc in range(trackModel.getCoordinateSet().getSize()):
         #Get current coordinate name
         coordName = trackModel.getCoordinateSet().get(cc).getName()
         #Set symmetry parameters based on coordinate
-        if coordName.endswith('_r'):
+        if coordName.endswith('_r') or coordName.endswith('_l'):
             #Joint angle value
             symmetryGoal.addStatePair(osim.MocoPeriodicityGoalPair(
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/value',
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString().replace('_r','_l')+'/value'))
+                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/value'))
             #Joint speed
             symmetryGoal.addStatePair(osim.MocoPeriodicityGoalPair(
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/speed',
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString().replace('_r','_l')+'/speed'))
-        elif coordName.endswith('_l'):
-            #Joint angle value
-            symmetryGoal.addStatePair(osim.MocoPeriodicityGoalPair(
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/value',
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString().replace('_l','_r')+'/value'))
-            #Joint speed
-            symmetryGoal.addStatePair(osim.MocoPeriodicityGoalPair(
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/speed',
-                trackModel.getCoordinateSet().get(cc).getAbsolutePathString().replace('_l','_r')+'/speed'))
+                trackModel.getCoordinateSet().get(cc).getAbsolutePathString()+'/speed'))
         elif coordName.endswith('_extension') or coordName.endswith('_tilt') or coordName.endswith('_ty'):
             #Joint angle value
             symmetryGoal.addStatePair(osim.MocoPeriodicityGoalPair(
@@ -321,7 +313,7 @@ if runTorqueTracking:
     #Create contact tracking goal
     contactGoal = osim.MocoContactTrackingGoal('contactGoal', grfWeight)
     #Set external loads
-    contactGoal.setExternalLoadsFile('refGRF_2D.xml')
+    contactGoal.setExternalLoadsFile(LoadSetup)
     #Set force name groups
     forceNames_r = osim.StdVectorString()
     forceNames_l = osim.StdVectorString()
@@ -558,7 +550,7 @@ if runMuscleTracking:
         effort.setWeightForControl('/forceset/lumbarAct', 0.001)
     
     #Set an average speed goal based on sprinting data
-    df_kinematics = readSTO('refQ_2D.sto')
+    df_kinematics = readSTO(inputkin)
     startPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[0]
     endPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[-1]
     sprintSpeed = (endPos - startPos) / (finalTime - initialTime)
@@ -877,7 +869,7 @@ if runMusclePrediction:
     
     #Set the speed goal
     #Get the original speed
-    df_kinematics = readSTO('refQ_2D.sto')
+    df_kinematics = readSTO(inputkin)
     startPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[0]
     endPos = df_kinematics['/jointset/ground_pelvis/pelvis_tx/value'].to_numpy()[-1]
     sprintSpeed = (endPos - startPos) / (finalTime - initialTime)
@@ -1123,7 +1115,7 @@ if runMusclePrediction:
 # if compareResults:
     
 #Load in experimental data
-df_expKinematics = readSTO('refQ_2D.sto')
+df_expKinematics = readSTO(inputkin)
 df_expGRF = readSTO('refGRF_2D.mot')
 
 #Load in torque driven tracking solution
@@ -1149,8 +1141,8 @@ colourDict = {'expData': '#000000',
               'musclePrediction': '#f4c20d'}
 
 #Get the initial and final time from the experimental kinematics
-expInitialTime = osim.Storage('refQ_2D.sto').getFirstTime()
-expFinalTime = osim.Storage('refQ_2D.sto').getLastTime()
+expInitialTime = osim.Storage(inputkin).getFirstTime()
+expFinalTime = osim.Storage(inputkin).getLastTime()
 
 # %% Compare GRFs
 
