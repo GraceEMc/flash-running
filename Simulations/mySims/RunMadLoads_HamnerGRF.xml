@@ -4,7 +4,7 @@
 		<objects>
 			<ExternalForce name="LeftGRF">
 				<!--Name of the body the force is applied to.-->
-				<applied_to_body>ground</applied_to_body>
+				<applied_to_body>calcn_l</applied_to_body>
 				<!--Name of the body the force is expressed in (default is ground).-->
 				<force_expressed_in_body>ground</force_expressed_in_body>
 				<!--Name of the body the point is expressed in (default is ground).-->
@@ -20,7 +20,7 @@
 			</ExternalForce>
 			<ExternalForce name="RightGRF">
 				<!--Name of the body the force is applied to.-->
-				<applied_to_body>ground</applied_to_body>
+				<applied_to_body>calcn_r</applied_to_body>
 				<!--Name of the body the force is expressed in (default is ground).-->
 				<force_expressed_in_body>ground</force_expressed_in_body>
 				<!--Name of the body the point is expressed in (default is ground).-->
@@ -37,6 +37,6 @@
 		</objects>
 		<groups />
 		<!--Storage file (.sto) containing (3) components of force and/or torque and point of application.Note: this file overrides the data source specified by the individual external forces if specified.-->
-		<datafile>C:\OpensimMoco\MOCORun\MyIMUOptimisation\Run_20002_GRF_v24.mot</datafile>
+		<datafile>Run_20002_GRF_v24.mot</datafile>
 	</ExternalLoads>
 </OpenSimDocument>
